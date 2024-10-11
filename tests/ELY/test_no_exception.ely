@@ -1,0 +1,4 @@
+try:
+    result = "Elysium" + 5
+except ZeroDivisionError:
+    print("Cannot divide by zero!")

@@ -1,0 +1,6 @@
+try:
+    result = "Elysium" + 5
+except TypeError:
+    print("Type error encountered!")
+except ZeroDivisionError:
+    print("Zero division error encountered!")

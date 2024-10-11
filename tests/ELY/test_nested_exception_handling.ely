@@ -1,0 +1,7 @@
+try:
+    try:
+        result = 10 / 0
+    except TypeError:
+        print("Inner TypeError")
+except ZeroDivisionError:
+    print("Outer ZeroDivisionError")

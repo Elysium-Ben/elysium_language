@@ -1,0 +1,7 @@
+def greet():
+    return "Hello"
+
+def greet():
+    return "Hi"
+
+print(greet())  # Expected output: "Hi"

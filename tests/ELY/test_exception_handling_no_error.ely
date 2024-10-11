@@ -1,0 +1,6 @@
+try:
+    result = 10 / 2
+except ZeroDivisionError:
+    print("Cannot divide by zero!")
+
+print(result)  # Expected output: 5.0
