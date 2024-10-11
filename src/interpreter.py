@@ -1,44 +1,41 @@
 # src/interpreter.py
 
+class InterpreterError(Exception):
+    """Base class for interpreter-specific errors."""
+    pass
+
+
+class InfiniteLoopError(InterpreterError):
+    """Raised when an infinite loop is detected."""
+    pass
+
+
+class InfiniteRecursionError(InterpreterError):
+    """Raised when infinite recursion is detected."""
+    pass
+
+
 class Interpreter:
     def __init__(self, ast):
         self.ast = ast
-        self.symbol_table = {}
 
     def execute(self):
-        """Execute the AST."""
+        """Executes the AST."""
         self.visit(self.ast)
 
     def visit(self, node):
-        """Visit a node."""
-        if node.type == "PROGRAM":
-            for child in node.children:
-                self.visit(child)
-        elif node.type == "ASSIGN":
-            var_name = node.left.value
-            var_value = self.visit(node.right)
-            self.symbol_table[var_name] = var_value
-        elif node.type == "PRINT":
-            value = self.visit(node.left)
-            print(value)
-        elif node.type == "IDENTIFIER":
-            var_name = node.value
-            if var_name in self.symbol_table:
-                return self.symbol_table[var_name]
-            else:
-                raise NameError(f"Undefined variable '{var_name}'")
-        elif node.type == "INTEGER":
-            return node.value
-        elif node.type == "PLUS":
-            return self.visit(node.left) + self.visit(node.right)
-        elif node.type == "MINUS":
-            return self.visit(node.left) - self.visit(node.right)
-        elif node.type == "MULTIPLY":
-            return self.visit(node.left) * self.visit(node.right)
-        elif node.type == "DIVIDE":
-            denominator = self.visit(node.right)
-            if denominator == 0:
-                raise ZeroDivisionError("Division by zero")
-            return self.visit(node.left) / denominator
-        else:
-            raise SyntaxError(f"Unknown node type: {node.type}")
+        """Visits a node and calls the appropriate method."""
+        method_name = f"visit_{node.node_type}"
+        visitor = getattr(self, method_name, self.generic_visit)
+        return visitor(node)
+
+    def generic_visit(self, node):
+        """Called if no explicit visitor function exists for a node."""
+        raise InterpreterError(f'No visit_{node.node_type} method')
+
+    # Example method to handle a 'PROGRAM' node
+    def visit_PROGRAM(self, node):
+        for child in node.children:
+            self.visit(child)
+
+    # You can add more visit methods here, depending on the node types in your AST.

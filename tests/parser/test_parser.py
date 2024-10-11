@@ -1,89 +1,54 @@
 # tests/parser/test_parser.py
 
-import pytest
-from src.lexer import Lexer
+from src.lexer import Lexer  # Import the Lexer
 from src.parser import Parser
 from src.ast_node import ASTNode
 
-import textwrap
-
-def test_parser_simple_assignment():
-    code = textwrap.dedent("""
-    x = 10
+def test_parser_basic_assignment(dedent_code):
+    code = dedent_code("""
+        a = 5
     """)
-    x = 10
-    """
     lexer = Lexer(code)
     tokens = lexer.tokenize()
     parser = Parser(tokens)
     ast = parser.parse()
-    expected_ast = ASTNode(
-        type='Program',
-        children=[
-            ASTNode(
-                type='Assignment',
-                value='x',
-                children=[
-                    ASTNode(type='Literal', value=10, children=[])
-                ]
-            )
-        ]
-    )
-    assert ast == expected_ast
 
-def test_parser_print_statement():
-    code = textwrap.dedent("""
-    print(10)
-    """)
-    print(10)
-    """
-    lexer = Lexer(code)
-    tokens = lexer.tokenize()
-    parser = Parser(tokens)
-    ast = parser.parse()
     expected_ast = ASTNode(
-        type='Program',
+        node_type='PROGRAM',
         children=[
             ASTNode(
-                type='Print',
+                node_type='ASSIGN',
+                value='a',
                 children=[
-                    ASTNode(type='Literal', value=10, children=[])
-                ]
-            )
-        ]
-    )
-    assert ast == expected_ast
-
-def test_parser_function_definition():
-    code = textwrap.dedent("""
-    def foo():
-        return 10
-    """)
-    def foo():
-        return 10
-    """
-    lexer = Lexer(code)
-    tokens = lexer.tokenize()
-    parser = Parser(tokens)
-    ast = parser.parse()
-    expected_ast = ASTNode(
-        type='Program',
-        children=[
-            ASTNode(
-                type='FunctionDef',
-                value='foo',
-                children=[
-                    ASTNode(type='Parameters', children=[]),
                     ASTNode(
-                        type='Block',
-                        children=[
-                            ASTNode(
-                                type='Return',
-                                children=[
-                                    ASTNode(type='Literal', value=10, children=[])
-                                ]
-                            )
-                        ]
+                        node_type='NUMBER',  # Updated from 'INTEGER' to 'NUMBER'
+                        value=5
+                    )
+                ]
+            )
+        ]
+    )
+    assert ast == expected_ast
+
+
+def test_parser_print_statement(dedent_code):
+    code = dedent_code("""
+        print(10)
+    """)
+    lexer = Lexer(code)
+    tokens = lexer.tokenize()
+    parser = Parser(tokens)
+    ast = parser.parse()
+
+    expected_ast = ASTNode(
+        node_type='PROGRAM',
+        children=[
+            ASTNode(
+                node_type='PRINT',
+                children=[
+                    ASTNode(
+                        node_type='NUMBER',  # Updated from 'INTEGER' to 'NUMBER'
+                        value=10
                     )
                 ]
             )

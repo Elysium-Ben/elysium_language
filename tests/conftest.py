@@ -5,6 +5,6 @@ import textwrap
 
 @pytest.fixture
 def dedent_code():
-    def _dedent(code_str):
+    def _dedent_code(code_str):
         return textwrap.dedent(code_str)
-    return _dedent
+    return _dedent_code

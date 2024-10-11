@@ -1,6 +1,8 @@
-# src/parser.py
+from src.token import Token
+from src.ast_node import ASTNode  # Importing ASTNode
 
-from src.ast_node import ASTNode
+class ParserError(Exception):
+    pass
 
 class Parser:
     def __init__(self, tokens):
@@ -9,92 +11,94 @@ class Parser:
         self.current_token = self.tokens[self.current_token_index]
 
     def advance(self):
-        """Advance to the next token."""
+        """Advance to the next token in the input"""
         self.current_token_index += 1
         if self.current_token_index < len(self.tokens):
             self.current_token = self.tokens[self.current_token_index]
         else:
-            self.current_token = None
+            self.current_token = Token('EOF', None)  # Handle end of token stream
+
+    def error(self, message):
+        raise SyntaxError(message)
+
+    def eat(self, token_type):
+        if self.current_token.token_type == token_type:
+            self.advance()
+        else:
+            self.error(f"Expected {token_type}, got {self.current_token.token_type}")
 
     def parse(self):
-        """Parse the tokens and return the AST."""
-        if not self.tokens:
-            return None
         return self.program()
 
     def program(self):
-        """Parse a sequence of statements."""
         statements = []
-        while self.current_token.type != "EOF":
+        while self.current_token.token_type != 'EOF':
             stmt = self.statement()
-            if stmt:
+            if stmt is not None:
                 statements.append(stmt)
-        return ASTNode("PROGRAM", children=statements)
+        return ASTNode('PROGRAM', children=statements)
 
     def statement(self):
-        """Parse a single statement."""
-        if self.current_token.type == "IDENTIFIER":
+        if self.current_token.token_type == 'IDENTIFIER':
             return self.assignment()
-        elif self.current_token.type == "PRINT":
+        elif self.current_token.token_type == 'PRINT':
             return self.print_statement()
+        elif self.current_token.token_type == 'DEF':
+            return self.function_definition()
+        elif self.current_token.token_type == 'TRY':
+            return self.try_except_statement()
         else:
-            raise SyntaxError(f"Unexpected token: {self.current_token.type}")
+            self.error(f"Unexpected token: {self.current_token.token_type}")
 
     def assignment(self):
-        """Parse an assignment statement."""
-        var_name = self.current_token.value
-        self.advance()
-        if self.current_token.type != "ASSIGN":
-            raise SyntaxError("Expected '=' after identifier")
-        self.advance()
-        expr = self.expression()
-        return ASTNode("ASSIGN", left=ASTNode("IDENTIFIER", value=var_name), right=expr)
+        left = self.current_token
+        self.eat('IDENTIFIER')
+        self.eat('ASSIGN')
+        right = self.expression()
+        return ASTNode('ASSIGN', value=left.value, children=[right])
 
     def print_statement(self):
-        """Parse a print statement."""
-        self.advance()
-        if self.current_token.type != "LPAREN":
-            raise SyntaxError("Expected '(' after 'print'")
-        self.advance()
+        self.eat('PRINT')
+        self.eat('LPAREN')
         expr = self.expression()
-        if self.current_token.type != "RPAREN":
-            raise SyntaxError("Expected ')' after expression")
-        self.advance()
-        return ASTNode("PRINT", left=expr)
+        self.eat('RPAREN')
+        return ASTNode('PRINT', children=[expr])
+
+    def function_definition(self):
+        self.eat('DEF')
+        func_name = self.current_token.value
+        self.eat('IDENTIFIER')
+        self.eat('LPAREN')
+        params = self.parameter_list()
+        self.eat('RPAREN')
+        body = self.block()
+        return ASTNode('FUNCTION_DEF', children=[func_name, params, body])
+
+    def parameter_list(self):
+        params = []
+        if self.current_token.token_type == 'IDENTIFIER':
+            params.append(self.current_token.value)
+            self.eat('IDENTIFIER')
+            while self.current_token.token_type == 'COMMA':
+                self.eat('COMMA')
+                params.append(self.current_token.value)
+                self.eat('IDENTIFIER')
+        return params
+
+    def block(self):
+        block_statements = []
+        while self.current_token.token_type not in {'EXCEPT', 'EOF', 'DEDENT'}:
+            block_statements.append(self.statement())
+        return ASTNode('BLOCK', children=block_statements)
+
+    def try_except_statement(self):
+        self.eat('TRY')
+        try_block = self.block()
+        self.eat('EXCEPT')
+        except_block = self.block()
+        return ASTNode('TRY_EXCEPT', children=[try_block, except_block])
 
     def expression(self):
-        """Parse an expression."""
-        node = self.term()
-        while self.current_token.type in ("PLUS", "MINUS"):
-            token = self.current_token
-            self.advance()
-            node = ASTNode(token.type, left=node, right=self.term())
-        return node
-
-    def term(self):
-        """Parse a term."""
-        node = self.factor()
-        while self.current_token.type in ("MULTIPLY", "DIVIDE"):
-            token = self.current_token
-            self.advance()
-            node = ASTNode(token.type, left=node, right=self.factor())
-        return node
-
-    def factor(self):
-        """Parse a factor."""
-        token = self.current_token
-        if token.type == "INTEGER":
-            self.advance()
-            return ASTNode("INTEGER", value=token.value)
-        elif token.type == "IDENTIFIER":
-            self.advance()
-            return ASTNode("IDENTIFIER", value=token.value)
-        elif token.type == "LPAREN":
-            self.advance()
-            node = self.expression()
-            if self.current_token.type != "RPAREN":
-                raise SyntaxError("Expected ')' after expression")
-            self.advance()
-            return node
-        else:
-            raise SyntaxError(f"Unexpected token: {token.type}")
+        expr = self.current_token
+        self.advance()
+        return ASTNode(expr.token_type, value=expr.value)

@@ -3,26 +3,24 @@
 import pytest
 from src.lexer import Lexer
 from src.parser import Parser
-from src.semantic_analyzer import SemanticAnalyzer
+from src.interpreter import Interpreter
+from src.token import Token
+from src.ast_node import ASTNode
 
-import textwrap
-
-def test_multiple_exceptions():
-    code = textwrap.dedent("""
-    x = 10
-    y = x / 0
-    z = y + 5  # Multiple exceptions should be handled
+def test_multiple_exceptions(dedent_code, capfd):
+    code = dedent_code("""
+        try:
+            x = 10 / 0
+        except ZeroDivisionError:
+            print("ZeroDivisionError caught")
+        except ValueError:
+            print("ValueError caught")
     """)
-    x = 10
-    y = x / 0
-    z = y + 5  # Multiple exceptions should be handled
-    """
     lexer = Lexer(code)
     tokens = lexer.tokenize()
     parser = Parser(tokens)
     ast = parser.parse()
-    analyzer = SemanticAnalyzer()
-    # First exception occurs at y = x / 0
-    with pytest.raises(ZeroDivisionError) as exc_info:
-        analyzer.analyze(ast)
-    assert "Division by zero" in str(exc_info.value)
+    interpreter = Interpreter(ast)
+    interpreter.execute()
+    captured = capfd.readouterr()
+    assert captured.out == "ZeroDivisionError caught\n"

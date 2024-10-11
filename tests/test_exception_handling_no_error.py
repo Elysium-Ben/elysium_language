@@ -3,26 +3,23 @@
 import pytest
 from src.lexer import Lexer
 from src.parser import Parser
-from src.semantic_analyzer import SemanticAnalyzer
+from src.interpreter import Interpreter
+from src.token import Token
+from src.ast_node import ASTNode
 
-import textwrap
-
-def test_exception_handling_no_error():
-    code = textwrap.dedent("""
-    a = 5
-    b = a + 10
+def test_exception_handling_no_error(dedent_code, capfd):
+    code = dedent_code("""
+        try:
+            x = 10 / 2
+        except ZeroDivisionError:
+            print("Cannot divide by zero")
+        print(x)
     """)
-    a = 5
-    b = a + 10
-    """
     lexer = Lexer(code)
     tokens = lexer.tokenize()
     parser = Parser(tokens)
     ast = parser.parse()
-    analyzer = SemanticAnalyzer()
-    analyzer.analyze(ast)
-    # Verify that 'a' and 'b' are in the symbol table with correct types
-    assert 'a' in analyzer.symbol_table
-    assert analyzer.symbol_table['a'] == 'int'
-    assert 'b' in analyzer.symbol_table
-    assert analyzer.symbol_table['b'] == 'int'
+    interpreter = Interpreter(ast)
+    interpreter.execute()
+    captured = capfd.readouterr()
+    assert captured.out == "5.0\n"

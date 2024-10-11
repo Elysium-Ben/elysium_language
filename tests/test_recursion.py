@@ -3,38 +3,29 @@
 import pytest
 from src.lexer import Lexer
 from src.parser import Parser
-from src.semantic_analyzer import SemanticAnalyzer
+from src.semantic_analyzer import SemanticAnalyzer, SemanticError
 from src.interpreter import Interpreter
+from src.token import Token
+from src.ast_node import ASTNode
 
-import textwrap
+def test_recursion_factorial(dedent_code, capfd):
+    code = dedent_code("""
+        def factorial(n):
+            if n == 0:
+                return 1
+            else:
+                return n * factorial(n - 1)
 
-def test_recursion(capfd):
-    code = textwrap.dedent("""
-    def factorial(n):
-        if n == 0:
-            return 1
-        else:
-            return n * factorial(n - 1)
-
-    result = factorial(5)
-    print(result)
+        result = factorial(5)
+        print(result)
     """)
-    def factorial(n):
-        if n == 0:
-            return 1
-        else:
-            return n * factorial(n - 1)
-
-    result = factorial(5)
-    print(result)
-    """
     lexer = Lexer(code)
     tokens = lexer.tokenize()
     parser = Parser(tokens)
     ast = parser.parse()
-    analyzer = SemanticAnalyzer()
-    analyzer.analyze(ast)
-    interpreter = Interpreter()
-    interpreter.execute(ast)
+    analyzer = SemanticAnalyzer(ast)
+    analyzer.analyze()
+    interpreter = Interpreter(ast)
+    interpreter.execute()
     captured = capfd.readouterr()
-    assert captured.out.strip() == "120"
+    assert captured.out == "120\n"

@@ -3,26 +3,21 @@
 import pytest
 from src.lexer import Lexer
 from src.parser import Parser
-from src.semantic_analyzer import SemanticAnalyzer
+from src.interpreter import Interpreter
+from src.token import Token
+from src.ast_node import ASTNode
 
-import textwrap
-
-def test_no_exception():
-    code = textwrap.dedent("""
-    a = 5
-    b = a + 10
+def test_no_exception(dedent_code, capfd):
+    code = dedent_code("""
+        x = 10
+        y = x + 5
+        print(y)
     """)
-    a = 5
-    b = a + 10
-    """
     lexer = Lexer(code)
     tokens = lexer.tokenize()
     parser = Parser(tokens)
     ast = parser.parse()
-    analyzer = SemanticAnalyzer()
-    analyzer.analyze(ast)
-    # Verify 'a' and 'b' are in the symbol table with type 'int'
-    assert 'a' in analyzer.symbol_table
-    assert analyzer.symbol_table['a'] == 'int'
-    assert 'b' in analyzer.symbol_table
-    assert analyzer.symbol_table['b'] == 'int'
+    interpreter = Interpreter(ast)
+    interpreter.execute()
+    captured = capfd.readouterr()
+    assert captured.out == "15\n"

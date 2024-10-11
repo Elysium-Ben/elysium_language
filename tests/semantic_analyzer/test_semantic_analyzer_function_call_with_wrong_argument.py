@@ -1,4 +1,4 @@
-# tests/test_function_overwrite.py
+# tests/semantic_analyzer/test_semantic_analyzer_function_call_with_wrong_argument.py
 
 import pytest
 from src.lexer import Lexer
@@ -7,15 +7,12 @@ from src.semantic_analyzer import SemanticAnalyzer, SemanticError
 from src.token import Token
 from src.ast_node import ASTNode
 
-def test_function_overwrite(dedent_code):
+def test_function_call_with_wrong_number_of_arguments(dedent_code):
     code = dedent_code("""
-        def func(a):
-            return a + 1
+        def multiply(a, b):
+            return a * b
 
-        def func(a):
-            return a + 2
-
-        result = func(5)
+        result = multiply(5)  # Missing second argument
     """)
     lexer = Lexer(code)
     tokens = lexer.tokenize()
