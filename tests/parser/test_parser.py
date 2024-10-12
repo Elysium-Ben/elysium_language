@@ -1,10 +1,21 @@
 # tests/parser/test_parser.py
 
-from src.lexer import Lexer  # Import the Lexer
-from src.parser import Parser
-from src.ast_node import ASTNode
+import pytest
+from src.lexer import Lexer  # Import the Lexer class
+from src.parser import Parser  # Import the Parser class
+from src.ast_node import ASTNode  # Import the ASTNode class
+from src.token import Token  # Import the Token class
+
+@pytest.fixture
+def dedent_code():
+    """Fixture to dedent multiline code strings."""
+    import textwrap
+    def _dedent_code(code):
+        return textwrap.dedent(code).strip()
+    return _dedent_code
 
 def test_parser_basic_assignment(dedent_code):
+    """Test parsing of a basic assignment statement."""
     code = dedent_code("""
         a = 5
     """)
@@ -21,7 +32,7 @@ def test_parser_basic_assignment(dedent_code):
                 value='a',
                 children=[
                     ASTNode(
-                        node_type='NUMBER',  # Updated from 'INTEGER' to 'NUMBER'
+                        node_type='NUMBER',
                         value=5
                     )
                 ]
@@ -30,8 +41,8 @@ def test_parser_basic_assignment(dedent_code):
     )
     assert ast == expected_ast
 
-
 def test_parser_print_statement(dedent_code):
+    """Test parsing of a print statement."""
     code = dedent_code("""
         print(10)
     """)
@@ -47,7 +58,7 @@ def test_parser_print_statement(dedent_code):
                 node_type='PRINT',
                 children=[
                     ASTNode(
-                        node_type='NUMBER',  # Updated from 'INTEGER' to 'NUMBER'
+                        node_type='NUMBER',
                         value=10
                     )
                 ]
