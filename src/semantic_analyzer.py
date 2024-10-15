@@ -13,6 +13,7 @@ class SemanticAnalyzer:
         self.functions = {}  # Map function names to parameter counts
         self.allow_function_overwrite = allow_function_overwrite
         self.imported_modules = set()  # Set of imported module names
+        self.builtin_functions = {'int', 'str', 'print', 'len'}  # Add more built-ins as needed
 
     def visit(self, node):
         method_name = 'visit_' + node.type.upper().replace('-', '_').replace(' ', '_')
@@ -134,7 +135,12 @@ class SemanticAnalyzer:
                 actual_arg_count = len(node.children)
                 if expected_arg_count != actual_arg_count:
                     raise SemanticError(f"Function '{func_name}' expects {expected_arg_count} arguments but {actual_arg_count} were given")
-            elif not self.is_variable_declared(func_name):
+            elif func_name in self.builtin_functions:
+                expected_arg_count = self.get_builtin_function_arg_count(func_name)
+                actual_arg_count = len(node.children)
+                if expected_arg_count is not None and expected_arg_count != actual_arg_count:
+                    raise SemanticError(f"Function '{func_name}' expects {expected_arg_count} arguments but {actual_arg_count} were given")
+            else:
                 raise SemanticError(f"Function '{func_name}' is not defined")
         elif func_node.type == 'ATTRIBUTE_ACCESS':
             # Handle module function calls
@@ -157,7 +163,9 @@ class SemanticAnalyzer:
 
     def visit_IMPORT(self, node):
         module_name = node.value
-        # For simplicity, assume module exists
+        # For simplicity, only allow 'math' module
+        if module_name not in {'math'}:
+            raise SemanticError(f"Module '{module_name}' not found")
         self.imported_modules.add(module_name)
 
     def visit_ATTRIBUTE_ACCESS(self, node):
@@ -174,7 +182,17 @@ class SemanticAnalyzer:
         return False
 
     def is_function_defined(self, func_name):
-        return func_name in self.functions
+        return func_name in self.functions or func_name in self.builtin_functions
 
     def current_scope(self):
         return self.scopes[-1]
+
+    def get_builtin_function_arg_count(self, func_name):
+        builtin_arg_counts = {
+            'int': 1,
+            'str': 1,
+            'print': None,  # Variable number of arguments
+            'len': 1,
+            # Add more built-ins as needed
+        }
+        return builtin_arg_counts.get(func_name, None)

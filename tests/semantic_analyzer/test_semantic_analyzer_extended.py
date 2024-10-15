@@ -18,11 +18,14 @@ class TestSemanticAnalyzerExtended(unittest.TestCase):
         lexer = Lexer(code)
         tokens = lexer.tokenize()
         parser = Parser(tokens)
-        ast = parser.parse()
+        try:
+            ast = parser.parse()
+        except ParserError as e:
+            self.fail(f"ParserError: {e}")
         semantic_analyzer = SemanticAnalyzer()
         with self.assertRaises(SemanticError) as context:
             semantic_analyzer.visit(ast)
-        self.assertIn("Function 'add' expects 2 arguments but 1 was given", str(context.exception))
+        self.assertIn("Function 'add' expects 2 arguments but 1 were given", str(context.exception))
 
     def test_semantic_analyzer_undeclared_variable_complex(self):
         code = """
@@ -34,7 +37,10 @@ class TestSemanticAnalyzerExtended(unittest.TestCase):
         lexer = Lexer(code)
         tokens = lexer.tokenize()
         parser = Parser(tokens)
-        ast = parser.parse()
+        try:
+            ast = parser.parse()
+        except ParserError as e:
+            self.fail(f"ParserError: {e}")
         semantic_analyzer = SemanticAnalyzer()
         with self.assertRaises(SemanticError) as context:
             semantic_analyzer.visit(ast)

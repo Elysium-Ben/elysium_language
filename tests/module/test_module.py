@@ -6,7 +6,6 @@ from src.parser import Parser, ParserError
 from src.semantic_analyzer import SemanticAnalyzer, SemanticError
 from src.interpreter import Interpreter, InterpreterError
 
-
 class TestModule(unittest.TestCase):
     """Test cases for module imports."""
 
@@ -19,38 +18,52 @@ class TestModule(unittest.TestCase):
         lexer = Lexer(code)
         tokens = lexer.tokenize()
         parser = Parser(tokens)
-        ast = parser.parse()
+        try:
+            ast = parser.parse()
+        except ParserError as e:
+            self.fail(f"ParserError: {e}")
         semantic_analyzer = SemanticAnalyzer()
-        semantic_analyzer.visit(ast)
+        try:
+            semantic_analyzer.visit(ast)
+        except SemanticError as e:
+            self.fail(f"SemanticError: {e}")
         interpreter = Interpreter()
-        interpreter.interpret(ast)
-        # Optionally, capture stdout and assert the output is '5'
+        try:
+            interpreter.interpret(ast)
+            # Optionally, capture stdout and assert the output is '5'
+        except InterpreterError as e:
+            self.fail(f"InterpreterError: {e}")
 
     def test_module_import_nonexistent(self):
         code = """
-        import nonexistent
+        import nonexistent_module
         """
         lexer = Lexer(code)
         tokens = lexer.tokenize()
         parser = Parser(tokens)
-        with self.assertRaises(SemanticError):
+        try:
             ast = parser.parse()
-            semantic_analyzer = SemanticAnalyzer()
+        except ParserError as e:
+            self.fail(f"ParserError: {e}")
+        semantic_analyzer = SemanticAnalyzer()
+        with self.assertRaises(SemanticError) as context:
             semantic_analyzer.visit(ast)
+        self.assertIn("Module 'nonexistent_module' not found", str(context.exception))
 
     def test_module_function_not_found(self):
         code = """
         import math
-        result = math.subtract(5, 2)
+        result = math.subtract(5, 3)
+        print(result)
         """
         lexer = Lexer(code)
         tokens = lexer.tokenize()
         parser = Parser(tokens)
-        ast = parser.parse()
-
+        try:
+            ast = parser.parse()
+        except ParserError as e:
+            self.fail(f"ParserError: {e}")
         semantic_analyzer = SemanticAnalyzer()
-        with self.assertRaises(SemanticError):
+        with self.assertRaises(SemanticError) as context:
             semantic_analyzer.visit(ast)
-
-if __name__ == '__main__':
-    unittest.main()
+        self.assertIn("Function 'subtract' not found in module 'math'", str(context.exception))

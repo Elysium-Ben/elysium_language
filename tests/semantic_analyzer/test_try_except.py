@@ -45,6 +45,7 @@ class TestTryExcept(unittest.TestCase):
         except ParserError as e:
             self.fail(f"ParserError: {e}")
         semantic_analyzer = SemanticAnalyzer()
+        # Since 'int' is a built-in function, no SemanticError should be raised
         try:
             semantic_analyzer.visit(ast)
         except SemanticError as e:

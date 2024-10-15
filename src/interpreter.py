@@ -142,32 +142,37 @@ class Interpreter:
         func_node = node.value
         if func_node.type == 'VARIABLE':
             func_name = func_node.value
-            if func_name not in self.functions:
-                raise InterpreterError(f"Function '{func_name}' is not defined")
-            func_def = self.functions[func_name]
-            expected_arg_count = len(func_def['params'])
-            actual_arg_count = len(node.children)
-            if expected_arg_count != actual_arg_count:
-                raise InterpreterError(f"Function '{func_name}' expects {expected_arg_count} arguments but {actual_arg_count} were given")
-            args = [self.visit(arg) for arg in node.children]
-            # Create a new scope for the function call
-            new_scope = {}
-            for param, arg in zip(func_def['params'], args):
-                new_scope[param] = arg
-            self.scopes.append(new_scope)
-            try:
-                self.visit(func_def['body'])
-            except ReturnException as e:
+            if func_name in self.functions:
+                func_def = self.functions[func_name]
+                expected_arg_count = len(func_def['params'])
+                actual_arg_count = len(node.children)
+                if expected_arg_count != actual_arg_count:
+                    raise InterpreterError(f"Function '{func_name}' expects {expected_arg_count} arguments but {actual_arg_count} were given")
+                args = [self.visit(arg) for arg in node.children]
+                # Create a new scope for the function call
+                new_scope = {}
+                for param, arg in zip(func_def['params'], args):
+                    new_scope[param] = arg
+                self.scopes.append(new_scope)
+                try:
+                    self.visit(func_def['body'])
+                except ReturnException as e:
+                    self.scopes.pop()
+                    return e.value
                 self.scopes.pop()
-                return e.value
-            self.scopes.pop()
+            elif func_name in self.get_builtin_functions():
+                # Handle built-in functions
+                args = [self.visit(arg) for arg in node.children]
+                return self.execute_builtin_function(func_name, args)
+            else:
+                raise InterpreterError(f"Function '{func_name}' is not defined")
         elif func_node.type == 'ATTRIBUTE_ACCESS':
             module_node = func_node.children[0]
             module_name = module_node.value
             function_name = func_node.value
             if module_name not in self.imported_modules:
                 raise InterpreterError(f"Module '{module_name}' is not imported")
-            # For demonstration, handle 'math.add'
+            # Handle module functions
             if module_name == 'math':
                 if function_name == 'add':
                     if len(node.children) != 2:
@@ -235,30 +240,49 @@ class Interpreter:
         module_name = node.value
         # For simplicity, only allow 'math' module
         if module_name not in {'math'}:
-            raise InterpreterError(f"Module '{module_name}' not found")
+            raise SemanticError(f"Module '{module_name}' not found")
         self.imported_modules.add(module_name)
 
     def visit_ATTRIBUTE_ACCESS(self, node):
         module_node = node.children[0]
         module_name = module_node.value
         if module_name not in self.imported_modules:
-            raise InterpreterError(f"Module '{module_name}' not imported")
+            raise SemanticError(f"Module '{module_name}' not imported")
         # Assume attributes from imported modules are valid
 
     def is_variable_declared(self, var_name):
         for scope in reversed(self.scopes):
             if var_name in scope:
-                return scope[var_name]
-        return None
+                return True
+        return False
 
-    def lookup_variable(self, var_name):
-        for scope in reversed(self.scopes):
-            if var_name in scope:
-                return scope[var_name]
-        return None
+    def is_function_defined(self, func_name):
+        return func_name in self.functions or func_name in self.get_builtin_functions()
 
     def current_scope(self):
         return self.scopes[-1]
+
+    def get_builtin_functions(self):
+        return {'int', 'str', 'print', 'len'}
+
+    def execute_builtin_function(self, func_name, args):
+        if func_name == 'int':
+            if len(args) != 1:
+                raise InterpreterError(f"Function 'int' expects 1 argument but {len(args)} were given")
+            return int(args[0])
+        elif func_name == 'str':
+            if len(args) != 1:
+                raise InterpreterError(f"Function 'str' expects 1 argument but {len(args)} were given")
+            return str(args[0])
+        elif func_name == 'print':
+            print(*args)
+            return None
+        elif func_name == 'len':
+            if len(args) != 1:
+                raise InterpreterError(f"Function 'len' expects 1 argument but {len(args)} were given")
+            return len(args[0])
+        else:
+            raise InterpreterError(f"Unknown built-in function: {func_name}")
 
     def get_exception_class(self, exception_name):
         # Map exception names to actual exception classes
@@ -269,3 +293,9 @@ class Interpreter:
             'ZeroDivisionError': ZeroDivisionError,
             # Add other exceptions as needed
         }.get(exception_name, Exception)
+
+    def lookup_variable(self, var_name):
+        for scope in reversed(self.scopes):
+            if var_name in scope:
+                return scope[var_name]
+        return None
