@@ -1,10 +1,7 @@
 # tests/conftest.py
 
-import pytest
-import textwrap
+import sys
+import os
 
-@pytest.fixture
-def dedent_code():
-    def _dedent_code(code_str):
-        return textwrap.dedent(code_str)
-    return _dedent_code
+# Add the 'src' directory to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))

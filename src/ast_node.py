@@ -1,31 +1,23 @@
 # src/ast_node.py
 
 class ASTNode:
-    def __init__(self, node_type, value=None, children=None):
-        """
-        Initialize an AST node.
-        
-        :param node_type: The type of the node (e.g., 'ASSIGN', 'PRINT', 'BINARY_OP').
-        :param value: The value associated with the node (e.g., variable name, number).
-        :param children: A list of child ASTNodes.
-        """
-        self.node_type = node_type
-        self.value = value
-        self.children = children if children is not None else []
+    """Class representing a node in the Abstract Syntax Tree (AST)."""
 
-    def add_child(self, node):
-        """Add a child node to the current node."""
-        self.children.append(node)
+    def __init__(self, node_type, value=None, children=None):
+        self.type = node_type      # The type of the node (e.g., 'PROGRAM', 'ASSIGN')
+        self.value = value         # The value associated with the node (e.g., variable name)
+        self.children = children if children is not None else []  # List of child nodes
 
     def __repr__(self):
-        """Return a string representation of the ASTNode."""
-        return f"ASTNode(node_type={self.node_type}, value={self.value}, children={self.children})"
+        return f"ASTNode(type={self.type}, value={self.value}, children={self.children})"
 
     def __eq__(self, other):
-        """Check equality between two ASTNodes."""
-        return (
-            isinstance(other, ASTNode) and 
-            self.node_type == other.node_type and 
-            self.value == other.value and
-            self.children == other.children
-        )
+        if not isinstance(other, ASTNode):
+            return False
+        return (self.type == other.type and
+                self.value == other.value and
+                self.children == other.children)
+
+    def __hash__(self):
+        # Ensure all children are hashable; convert lists to tuples
+        return hash((self.type, self.value, tuple(self.children)))

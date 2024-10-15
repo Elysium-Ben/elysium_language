@@ -1,20 +1,34 @@
 # tests/interpreter/test_interpreter_unhandled_exception.py
 
-import pytest
+import unittest
 from src.lexer import Lexer
-from src.parser import Parser
-from src.interpreter import Interpreter
-from src.token import Token
-from src.ast_node import ASTNode
+from src.parser import Parser, ParserError
+from src.semantic_analyzer import SemanticAnalyzer
+from src.interpreter import Interpreter, InterpreterError
 
-def test_interpreter_unhandled_exception(dedent_code):
-    code = dedent_code("""
-        x = 10 / 0
-    """)
-    lexer = Lexer(code)
-    tokens = lexer.tokenize()
-    parser = Parser(tokens)
-    ast = parser.parse()
-    interpreter = Interpreter(ast)
-    with pytest.raises(ZeroDivisionError):
-        interpreter.execute()
+
+class TestInterpreterUnhandledException(unittest.TestCase):
+    """Interpreter tests for unhandled exceptions."""
+
+    def test_interpreter_unhandled_exception(self):
+        code = """
+        def func():
+            raise Exception("Unhandled")
+        end
+        func()
+        """
+        lexer = Lexer(code)
+        tokens = lexer.tokenize()
+        parser = Parser(tokens)
+        try:
+            ast = parser.parse()
+        except ParserError as e:
+            self.fail(f"ParserError: {e}")
+        semantic_analyzer = SemanticAnalyzer()
+        semantic_analyzer.visit(ast)
+        interpreter = Interpreter()
+        with self.assertRaises(InterpreterError):
+            interpreter.interpret(ast)
+
+if __name__ == '__main__':
+    unittest.main()

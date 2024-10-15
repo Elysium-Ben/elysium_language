@@ -1,23 +1,28 @@
 # tests/semantic_analyzer/test_semantic_analyzer_function_call_with_wrong_argument.py
 
-import pytest
+import unittest
 from src.lexer import Lexer
-from src.parser import Parser
+from src.parser import Parser, ParserError
 from src.semantic_analyzer import SemanticAnalyzer, SemanticError
-from src.token import Token
-from src.ast_node import ASTNode
 
-def test_function_call_with_wrong_number_of_arguments(dedent_code):
-    code = dedent_code("""
-        def multiply(a, b):
-            return a * b
 
-        result = multiply(5)  # Missing second argument
-    """)
-    lexer = Lexer(code)
-    tokens = lexer.tokenize()
-    parser = Parser(tokens)
-    ast = parser.parse()
-    analyzer = SemanticAnalyzer(ast)
-    with pytest.raises(SemanticError):
-        analyzer.analyze()
+class TestFunctionCallWrongArgument(unittest.TestCase):
+    """Test cases for function calls with wrong arguments."""
+
+    def test_function_call_wrong_number_of_arguments(self):
+        code = """
+        def add(a, b):
+            return a + b
+        end
+        result = add(1)
+        """
+        lexer = Lexer(code)
+        tokens = lexer.tokenize()
+        parser = Parser(tokens)
+        ast = parser.parse()
+        semantic_analyzer = SemanticAnalyzer()
+        with self.assertRaises(SemanticError):
+            semantic_analyzer.visit(ast)
+
+if __name__ == '__main__':
+    unittest.main()

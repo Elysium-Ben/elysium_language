@@ -1,4 +1,4 @@
-# tests/test_exception_handling_no_error.py
+# tests/interpreter/test_exception_handling.py
 
 import unittest
 from src.lexer import Lexer
@@ -7,15 +7,18 @@ from src.semantic_analyzer import SemanticAnalyzer
 from src.interpreter import Interpreter
 
 
-class TestExceptionHandlingNoError(unittest.TestCase):
-    """Test cases where exceptions are not raised."""
+class TestInterpreterExceptionHandling(unittest.TestCase):
+    """Interpreter tests for exception handling."""
 
-    def test_exception_handling_no_error(self):
+    def test_interpreter_exception_propagation(self):
         code = """
+        def func():
+            raise Exception("Error")
+        end
         try:
-            print("No exception")
+            func()
         except Exception:
-            print("This should not be printed")
+            print("Exception caught")
         end
         """
         lexer = Lexer(code)
@@ -29,7 +32,7 @@ class TestExceptionHandlingNoError(unittest.TestCase):
         semantic_analyzer.visit(ast)
         interpreter = Interpreter()
         interpreter.interpret(ast)
-        # Optionally, capture stdout and assert the output is 'No exception'
+        # Optionally, capture stdout and assert the output is 'Exception caught'
 
 if __name__ == '__main__':
     unittest.main()

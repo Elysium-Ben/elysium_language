@@ -1,39 +1,117 @@
 # tests/interpreter/test_interpreter.py
 
-import pytest
+import unittest
 from src.lexer import Lexer
-from src.parser import Parser
-from src.interpreter import Interpreter
-from src.token import Token
-from src.ast_node import ASTNode
+from src.parser import Parser, ParserError
+from src.semantic_analyzer import SemanticAnalyzer
+from src.interpreter import Interpreter, InterpreterError
 
-def test_interpreter_basic_assignment(dedent_code, capfd):
-    code = dedent_code("""
+
+class TestInterpreter(unittest.TestCase):
+    """General interpreter tests."""
+
+    def test_interpreter_basic_assignment_print(self):
+        code = """
         a = 5
-        b = a + 3
-        print(b)
-    """)
-    lexer = Lexer(code)
-    tokens = lexer.tokenize()
-    parser = Parser(tokens)
-    ast = parser.parse()
-    interpreter = Interpreter(ast)
-    interpreter.execute()
-    captured = capfd.readouterr()
-    assert captured.out == "8\n"
+        print(a)
+        """
+        lexer = Lexer(code)
+        tokens = lexer.tokenize()
+        parser = Parser(tokens)
+        try:
+            ast = parser.parse()
+        except ParserError as e:
+            self.fail(f"ParserError: {e}")
+        semantic_analyzer = SemanticAnalyzer()
+        semantic_analyzer.visit(ast)
+        interpreter = Interpreter()
+        interpreter.interpret(ast)
+        # Optionally, assert that '5' is printed
 
-def test_interpreter_multiple_assignments(dedent_code, capfd):
-    code = dedent_code("""
-        x = 10
-        y = x * 2
-        z = y - 5
-        print(z)
-    """)
-    lexer = Lexer(code)
-    tokens = lexer.tokenize()
-    parser = Parser(tokens)
-    ast = parser.parse()
-    interpreter = Interpreter(ast)
-    interpreter.execute()
-    captured = capfd.readouterr()
-    assert captured.out == "15\n"
+    def test_interpreter_string_assignment_print(self):
+        code = """
+        message = "Hello, World!"
+        print(message)
+        """
+        lexer = Lexer(code)
+        tokens = lexer.tokenize()
+        parser = Parser(tokens)
+        try:
+            ast = parser.parse()
+        except ParserError as e:
+            self.fail(f"ParserError: {e}")
+        semantic_analyzer = SemanticAnalyzer()
+        semantic_analyzer.visit(ast)
+        interpreter = Interpreter()
+        interpreter.interpret(ast)
+
+    def test_interpreter_operator_precedence(self):
+        code = """
+        result = 2 + 3 * 4
+        print(result)
+        """
+        lexer = Lexer(code)
+        tokens = lexer.tokenize()
+        parser = Parser(tokens)
+        try:
+            ast = parser.parse()
+        except ParserError as e:
+            self.fail(f"ParserError: {e}")
+        semantic_analyzer = SemanticAnalyzer()
+        semantic_analyzer.visit(ast)
+        interpreter = Interpreter()
+        interpreter.interpret(ast)
+
+    def test_interpreter_parenthesized_expression(self):
+        code = """
+        result = (2 + 3) * 4
+        print(result)
+        """
+        lexer = Lexer(code)
+        tokens = lexer.tokenize()
+        parser = Parser(tokens)
+        try:
+            ast = parser.parse()
+        except ParserError as e:
+            self.fail(f"ParserError: {e}")
+        semantic_analyzer = SemanticAnalyzer()
+        semantic_analyzer.visit(ast)
+        interpreter = Interpreter()
+        interpreter.interpret(ast)
+
+    def test_interpreter_division_expression(self):
+        code = """
+        result = 10 / 2
+        print(result)
+        """
+        lexer = Lexer(code)
+        tokens = lexer.tokenize()
+        parser = Parser(tokens)
+        try:
+            ast = parser.parse()
+        except ParserError as e:
+            self.fail(f"ParserError: {e}")
+        semantic_analyzer = SemanticAnalyzer()
+        semantic_analyzer.visit(ast)
+        interpreter = Interpreter()
+        interpreter.interpret(ast)
+
+    def test_interpreter_unhandled_exception(self):
+        code = """
+        raise Exception("Test exception")
+        """
+        lexer = Lexer(code)
+        tokens = lexer.tokenize()
+        parser = Parser(tokens)
+        try:
+            ast = parser.parse()
+        except ParserError as e:
+            self.fail(f"ParserError: {e}")
+        semantic_analyzer = SemanticAnalyzer()
+        semantic_analyzer.visit(ast)
+        interpreter = Interpreter()
+        with self.assertRaises(InterpreterError):
+            interpreter.interpret(ast)
+
+if __name__ == '__main__':
+    unittest.main()

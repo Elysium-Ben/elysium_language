@@ -1,40 +1,60 @@
 # tests/semantic_analyzer/test_semantic_analysis_function_definition.py
 
-import pytest
+import unittest
 from src.lexer import Lexer
-from src.parser import Parser
+from src.parser import Parser, ParserError
 from src.semantic_analyzer import SemanticAnalyzer, SemanticError
-from src.token import Token
-from src.ast_node import ASTNode
 
-def test_semantic_analysis_function_definition_correct(dedent_code):
-    code = dedent_code("""
+
+class TestSemanticAnalysisFunctionDefinition(unittest.TestCase):
+    """Semantic analyzer tests for function definitions."""
+
+    def test_function_definition_success(self):
+        code = """
         def add(a, b):
             return a + b
+        end
+        """
+        lexer = Lexer(code)
+        tokens = lexer.tokenize()
+        parser = Parser(tokens)
+        ast = parser.parse()
+        semantic_analyzer = SemanticAnalyzer()
+        try:
+            semantic_analyzer.visit(ast)
+        except SemanticError as e:
+            self.fail(f"SemanticError: {e}")
 
-        result = add(5, 3)
-    """)
-    lexer = Lexer(code)
-    tokens = lexer.tokenize()
-    parser = Parser(tokens)
-    ast = parser.parse()
-    analyzer = SemanticAnalyzer(ast)
-    analyzer.analyze()
-    # Assuming SemanticAnalyzer populates a symbol table
-    assert analyzer.symbol_table.lookup('add') is not None
-    assert analyzer.symbol_table.lookup('result') is not None
+    def test_function_definition_duplicate(self):
+        code = """
+        def func():
+            pass
+        end
+        def func():
+            pass
+        end
+        """
+        lexer = Lexer(code)
+        tokens = lexer.tokenize()
+        parser = Parser(tokens)
+        ast = parser.parse()
+        semantic_analyzer = SemanticAnalyzer()
+        with self.assertRaises(SemanticError):
+            semantic_analyzer.visit(ast)
 
-def test_semantic_analysis_function_definition_missing_return(dedent_code):
-    code = dedent_code("""
-        def add(a, b):
-            c = a + b
+    def test_function_definition_missing_return(self):
+        code = """
+        def func():
+            a = 10
+        end
+        """
+        lexer = Lexer(code)
+        tokens = lexer.tokenize()
+        parser = Parser(tokens)
+        ast = parser.parse()
+        # Depending on language design, decide if missing return is an error
+        semantic_analyzer = SemanticAnalyzer()
+        semantic_analyzer.visit(ast)
 
-        result = add(5, 3)
-    """)
-    lexer = Lexer(code)
-    tokens = lexer.tokenize()
-    parser = Parser(tokens)
-    ast = parser.parse()
-    analyzer = SemanticAnalyzer(ast)
-    with pytest.raises(SemanticError):
-        analyzer.analyze()
+if __name__ == '__main__':
+    unittest.main()

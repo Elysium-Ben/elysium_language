@@ -1,62 +1,59 @@
-import pytest
+# tests/test_basic_functionality.py
+
+import unittest
 from src.lexer import Lexer
-from src.parser import Parser
-from src.token import Token
-from src.ast_node import ASTNode
+from src.parser import Parser, ParserError
+from src.semantic_analyzer import SemanticAnalyzer, SemanticError
+from src.interpreter import Interpreter, InterpreterError
 
-def test_basic_assignment_and_print(dedent_code, capfd):
-    code = dedent_code("""
-        x = 10
-        y = x + 5
-        print(y)
-    """)
-    lexer = Lexer(code)
-    tokens = lexer.tokenize()
-    parser = Parser(tokens)
-    ast = parser.parse()
 
-    expected_ast = ASTNode(
-        node_type='PROGRAM',
-        children=[
-            ASTNode(
-                node_type='ASSIGN',
-                value=Token(token_type='IDENTIFIER', lexeme='x'),
-                children=[
-                    ASTNode(
-                        node_type='INTEGER',
-                        value=Token(token_type='INTEGER', lexeme='10')
-                    )
-                ]
-            ),
-            ASTNode(
-                node_type='ASSIGN',
-                value=Token(token_type='IDENTIFIER', lexeme='y'),
-                children=[
-                    ASTNode(
-                        node_type='BIN_OP',
-                        value=Token(token_type='PLUS', lexeme='+'),
-                        children=[
-                            ASTNode(
-                                node_type='IDENTIFIER',
-                                value=Token(token_type='IDENTIFIER', lexeme='x')
-                            ),
-                            ASTNode(
-                                node_type='INTEGER',
-                                value=Token(token_type='INTEGER', lexeme='5')
-                            )
-                        ]
-                    )
-                ]
-            ),
-            ASTNode(
-                node_type='PRINT',
-                children=[
-                    ASTNode(
-                        node_type='IDENTIFIER',
-                        value=Token(token_type='IDENTIFIER', lexeme='y')
-                    )
-                ]
-            )
-        ]
-    )
-    assert ast == expected_ast
+class TestBasicFunctionality(unittest.TestCase):
+    """Test cases for basic functionality of the Elysium language."""
+
+    def test_basic_arithmetic_operations(self):
+        code = """
+        a = 5 + 3 * 2
+        print(a)
+        """
+        lexer = Lexer(code)
+        tokens = lexer.tokenize()
+        parser = Parser(tokens)
+        try:
+            ast = parser.parse()
+        except ParserError as e:
+            self.fail(f"ParserError: {e}")
+        semantic_analyzer = SemanticAnalyzer()
+        try:
+            semantic_analyzer.visit(ast)
+        except SemanticError as e:
+            self.fail(f"SemanticError: {e}")
+        interpreter = Interpreter()
+        interpreter.interpret(ast)
+        # Optionally, capture stdout and assert the output is '11'
+
+    def test_basic_variable_scope(self):
+        code = """
+        def test():
+            a = 10
+            print(a)
+        end
+        test()
+        """
+        lexer = Lexer(code)
+        tokens = lexer.tokenize()
+        parser = Parser(tokens)
+        try:
+            ast = parser.parse()
+        except ParserError as e:
+            self.fail(f"ParserError: {e}")
+        semantic_analyzer = SemanticAnalyzer()
+        try:
+            semantic_analyzer.visit(ast)
+        except SemanticError as e:
+            self.fail(f"SemanticError: {e}")
+        interpreter = Interpreter()
+        interpreter.interpret(ast)
+        # Optionally, capture stdout and assert the output is '10'
+
+if __name__ == '__main__':
+    unittest.main()

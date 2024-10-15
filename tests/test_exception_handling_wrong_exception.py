@@ -1,23 +1,32 @@
 # tests/test_exception_handling_wrong_exception.py
 
-import pytest
+import unittest
 from src.lexer import Lexer
-from src.parser import Parser
-from src.interpreter import Interpreter
-from src.token import Token
-from src.ast_node import ASTNode
+from src.parser import Parser, ParserError
+from src.semantic_analyzer import SemanticAnalyzer, SemanticError
+from src.interpreter import Interpreter, InterpreterError
 
-def test_exception_handling_wrong_exception(dedent_code):
-    code = dedent_code("""
+
+class TestExceptionHandlingWrongException(unittest.TestCase):
+    """Test cases where the wrong exception is handled."""
+
+    def test_exception_handling_wrong_exception(self):
+        code = """
         try:
-            x = 10 / 0
-        except ValueError:
-            print("ValueError caught")
-    """)
-    lexer = Lexer(code)
-    tokens = lexer.tokenize()
-    parser = Parser(tokens)
-    ast = parser.parse()
-    interpreter = Interpreter(ast)
-    with pytest.raises(ZeroDivisionError):
-        interpreter.execute()
+            raise ValueError("An error occurred")
+        except TypeError:
+            print("Caught TypeError")
+        end
+        """
+        lexer = Lexer(code)
+        tokens = lexer.tokenize()
+        parser = Parser(tokens)
+        ast = parser.parse()
+        semantic_analyzer = SemanticAnalyzer()
+        semantic_analyzer.visit(ast)
+        interpreter = Interpreter()
+        with self.assertRaises(InterpreterError):
+            interpreter.interpret(ast)
+
+if __name__ == '__main__':
+    unittest.main()
