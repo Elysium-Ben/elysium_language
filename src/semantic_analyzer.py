@@ -14,6 +14,12 @@ class SemanticAnalyzer:
         self.allow_function_overwrite = allow_function_overwrite
         self.imported_modules = set()  # Set of imported module names
         self.builtin_functions = {'int', 'str', 'print', 'len'}  # Add more built-ins as needed
+        # Define available functions per module
+        self.module_functions = {
+            'math': {'add'},  # Add other modules and their functions here
+            # Example:
+            # 'string_utils': {'capitalize', 'lower', 'upper'}
+        }
 
     def visit(self, node):
         method_name = 'visit_' + node.type.upper().replace('-', '_').replace(' ', '_')
@@ -149,7 +155,13 @@ class SemanticAnalyzer:
             function_name = func_node.value
             if module_name not in self.imported_modules:
                 raise SemanticError(f"Module '{module_name}' not imported")
-            # Assume functions from imported modules are valid
+            # Check if function exists in the module
+            if module_name in self.module_functions:
+                if function_name not in self.module_functions[module_name]:
+                    raise SemanticError(f"Function '{function_name}' not found in module '{module_name}'")
+            else:
+                # Unknown module, but should have been caught by previous check
+                raise SemanticError(f"Module '{module_name}' has no functions defined")
         else:
             raise SemanticError(f"Unknown function node type: {func_node.type}")
         for arg in node.children:
